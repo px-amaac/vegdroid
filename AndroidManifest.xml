@@ -106,10 +106,6 @@
             android:name="de.thiemonagel.vegdroid.MapActivity"
             android:label="@string/title_activity_map" >
         </activity>
-        <activity
-            android:name="de.thiemonagel.vegdroid.AboutActivity"
-            android:label="@string/title_activity_about" >
-        </activity>
 
         <!-- When specifing several keys, the last one takes precedence. -->
         <!-- Google Maps API v2 key:  Thiemo (release certificate FF:35:CA:4D:71:EA:BE:8D:E6:99:B8:F8:82:01:BA:F4:11:54:30:73) -->

@@ -85,7 +85,7 @@ public class MapActivity extends SherlockFragmentActivity {
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             case R.id.menu_about:
-                Intent intent = new Intent(this, AboutActivity.class);
+                Intent intent = new Intent(this, AboutFragment.class);
                 startActivity(intent);
                 return true;
             case R.id.menu_filter_cat:

@@ -5,10 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NavUtils;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
@@ -17,8 +14,12 @@ import com.actionbarsherlock.view.MenuItem;
 public class MainActivity extends SherlockFragmentActivity {
 
     private MainMenuFragment menuFrag;
-    private Fragment visible;
-    private Fragment mVisibleCached;
+    private AboutFragment aboutFrag;
+    private Fragment visible; // used to keep track of what fragment is being
+                              // shown.
+    private Fragment mVisibleCached; // keep track of the previous fragment that
+                                     // was being shown in case user presses the
+                                     // back button.
     private static final int MASK_ALL = 0x3ff;
     private static final int MASK_FOOD = 0x00f;
     private static final int MASK_SHOP = 0x050;
@@ -28,7 +29,7 @@ public class MainActivity extends SherlockFragmentActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_container);
-
+        getSupportActionBar().setHomeButtonEnabled(true);
         setupFragments();
     }
 
@@ -61,14 +62,14 @@ public class MainActivity extends SherlockFragmentActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home: // no idea what this is for. This a a link to
-                                // your icon in the actionbar. Most people set
-                                // it to the home Screen of the app.
+            showFragment(0); // your icon in the actionbar. Most people set
+                             // it to the home Screen of the app.
             return true;
         case R.id.menu_about:
+            showFragment(1);
             return true;
-        default:
-            return super.onOptionsItemSelected(item);
         }
+        return super.onOptionsItemSelected(item);
     }
 
     public void showFragment(int fragIn) {
@@ -77,12 +78,10 @@ public class MainActivity extends SherlockFragmentActivity {
 
         ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
         if (visible != null) {
-            ft.hide(visible);
-            mVisibleCached = visible;
+            mVisibleCached = visible; //we need to cache the currently visible fragment in case the user presses the back button.
         }
-
-        switch (fragIn) {
-        case 0:
+        // 0 is for menu fragmnet
+        if (fragIn == 0) {
             menuFrag = ((MainMenuFragment) fm
                     .findFragmentByTag(MainMenuFragment.TAG));
             if (menuFrag == null)
@@ -90,24 +89,48 @@ public class MainActivity extends SherlockFragmentActivity {
             ft.replace(R.id.fragment_container, menuFrag, MainMenuFragment.TAG);
             ft.addToBackStack(null);
             visible = menuFrag;
-            break;
-        case 1:
-            Global.getInstance(this).setCatFilterMask(MASK_FOOD);
-            break;
-        case 2:
-            Global.getInstance(this).setCatFilterMask(MASK_SHOP);
+        }
+        // 1 is for about fragment
+        else if (fragIn == 1) {
+            aboutFrag = ((AboutFragment) fm
+                    .findFragmentByTag(AboutFragment.TAG));
 
-            break;
-        case 3:
-            Global.getInstance(this).setCatFilterMask(MASK_LODGE);
-
-            break;
-        case 4:
-            Global.getInstance(this).setCatFilterMask(MASK_ALL);
-
-            break;
+            if (aboutFrag == null)
+                aboutFrag = AboutFragment.newInstance();
+            ft.replace(R.id.fragment_container, aboutFrag, AboutFragment.TAG);
+            ft.addToBackStack(null);
+            visible = aboutFrag;
 
         }
+        // 2 is for venue fragment
+        else if (fragIn == 2) {
+
+        }
+        // the rest are map fragments with different data displayed
+        else {
+            switch (fragIn) {
+            case 3:
+                Global.getInstance(this).setCatFilterMask(MASK_FOOD);
+                break;
+            case 4:
+                Global.getInstance(this).setCatFilterMask(MASK_SHOP);
+                break;
+            case 5:
+                Global.getInstance(this).setCatFilterMask(MASK_LODGE);
+                break;
+            case 6:
+                Global.getInstance(this).setCatFilterMask(MASK_ALL);
+                break;
+            }
+
+        }
+        ft.commit();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        visible = mVisibleCached;
     }
 
     public void StartFood(View view) {
