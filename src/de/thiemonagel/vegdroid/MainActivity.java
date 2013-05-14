@@ -20,10 +20,11 @@ public class MainActivity extends SherlockFragmentActivity {
     private Fragment mVisibleCached; // keep track of the previous fragment that
                                      // was being shown in case user presses the
                                      // back button.
-    private static final int MASK_ALL = 0x3ff;
-    private static final int MASK_FOOD = 0x00f;
-    private static final int MASK_SHOP = 0x050;
-    private static final int MASK_LODGE = 0x100;
+    public static final int MASK_ALL = 0x3ff;
+    public static final int MASK_FOOD = 0x00f;
+    public static final int MASK_SHOP = 0x050;
+    public static final int MASK_LODGE = 0x100;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -46,7 +47,7 @@ public class MainActivity extends SherlockFragmentActivity {
                 .findFragmentByTag(MainMenuFragment.TAG));
         if (menuFrag == null) {
             menuFrag = MainMenuFragment.newInstance();
-            ft.add(R.id.fragment_container, menuFrag, MainMenuFragment.TAG);
+            ft.add(R.id.map_list_menu, menuFrag, MainMenuFragment.TAG);
         }
         visible = menuFrag;
         ft.commit();
@@ -86,9 +87,10 @@ public class MainActivity extends SherlockFragmentActivity {
                     .findFragmentByTag(MainMenuFragment.TAG));
             if (menuFrag == null)
                 menuFrag = MainMenuFragment.newInstance();
-            ft.replace(R.id.fragment_container, menuFrag, MainMenuFragment.TAG);
+            ft.replace(R.id.map_list_menu, menuFrag, MainMenuFragment.TAG);
             ft.addToBackStack(null);
             visible = menuFrag;
+            ft.commit();
         }
         // 1 is for about fragment
         else if (fragIn == 1) {
@@ -97,14 +99,10 @@ public class MainActivity extends SherlockFragmentActivity {
 
             if (aboutFrag == null)
                 aboutFrag = AboutFragment.newInstance();
-            ft.replace(R.id.fragment_container, aboutFrag, AboutFragment.TAG);
+            ft.replace(R.id.map_list_menu, aboutFrag, AboutFragment.TAG);
             ft.addToBackStack(null);
             visible = aboutFrag;
-
-        }
-        // 2 is for venue fragment
-        else if (fragIn == 2) {
-
+            ft.commit();
         }
         // the rest are map fragments with different data displayed
         else {
@@ -122,9 +120,10 @@ public class MainActivity extends SherlockFragmentActivity {
                 Global.getInstance(this).setCatFilterMask(MASK_ALL);
                 break;
             }
-
+            Intent in = new Intent(getApplicationContext(), MapActivity.class);
+            startActivity(in);
         }
-        ft.commit();
+
     }
 
     @Override

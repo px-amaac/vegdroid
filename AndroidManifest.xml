@@ -17,7 +17,7 @@
         10: Gingerbread 2.3.3-2.3.7
         15: Ice Cream Sandwich 4.0
         16: Jelly Bean 4.1
-        17: Jelly Bean 4.2
+        17: Jelly Bean 4.2
     -->
 
 
@@ -31,7 +31,7 @@
 
     <!--
          uses-permission ACCESS_FINE_LOCATION implies uses-feature android.hardware.location.gps,
-         but that seems overzealous to me, so a more suitable requirement is set below
+         but that seems overzealous to me, so a more suitable requirement is set below
     -->
     <uses-feature
         android:name="android.hardware.location"
@@ -46,7 +46,7 @@
         superset of 'touchscreen', cf.
         http://www.saschahlusiak.de/2012/10/android-hardware-faketouch-vs-android-hardware-touchscreen/
         Given the options of either not allowing installation on faketouch devices or allowing
-        installation on all devices independent of touch (emulation), I chose the latter.
+        installation on all devices independent of touch (emulation), I chose the latter.
     -->
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -83,28 +83,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.thiemonagel.vegdroid.EntryListActivity"
-            android:label="@string/title_activity_entry_list" >
+            android:name="de.thiemonagel.vegdroid.MapActivity"
+            android:label="@string/title_activity_map" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.thiemonagel.vegdroid.MainActivity" />
-        </activity>
-        <activity
-            android:name="de.thiemonagel.vegdroid.EntryActivity"
-            android:label="@string/title_activity_entry" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="android.app.EntryActivity" />
-            <!--
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            -->
-        </activity>
-        <activity
-            android:name="de.thiemonagel.vegdroid.MapActivity"
-            android:label="@string/title_activity_map" >
         </activity>
 
         <!-- When specifing several keys, the last one takes precedence. -->
@@ -117,13 +100,13 @@
         <!--
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyB9IYt3oTaAuGIE3NWYu3c9gl-BClLtTUg" />
+            android:value="AIzaSyB9IYt3oTaAuGIE3NWYu3c9gl-BClLtTUg" />
         -->
         <!-- Google Maps API v2 key:  doubleA -->
         <!--
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyAAp-LcACcjZz41ytE-VSt4pIPrdXLj-ts" />
+            android:value="AIzaSyAAp-LcACcjZz41ytE-VSt4pIPrdXLj-ts" />
         -->
 
     </application>

@@ -205,7 +205,7 @@ class LoadStream extends AsyncTask<LatLng, Void, Void> {
                             // skip closed venues
                             if ( v.closed() ) continue;
 
-                            Global.getInstance(mContext).CGC.Resolve(mContext, v);
+                            //Global.getInstance(mContext).CGC.Resolve(mContext, v);
                         }
                         reader.endArray();
                     }
