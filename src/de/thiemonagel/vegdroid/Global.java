@@ -158,6 +158,7 @@ class LoadStream extends AsyncTask<LatLng, Void, Void> {
 
         try {
             LatLng ll = llarray[0];
+            Log.d( Global.LOG_TAG, "request: " + ll );
             String urlstring = "https://www.vegguide.org/search/by-lat-long/";
             urlstring += ll.latitude + "," + ll.longitude;
             urlstring += "?unit=km&distance=200&limit=100";
@@ -205,7 +206,7 @@ class LoadStream extends AsyncTask<LatLng, Void, Void> {
                             // skip closed venues
                             if ( v.closed() ) continue;
 
-                            //Global.getInstance(mContext).CGC.Resolve(mContext, v);
+                            Global.getInstance(mContext).CGC.Resolve(mContext, v);
                         }
                         reader.endArray();
                     }

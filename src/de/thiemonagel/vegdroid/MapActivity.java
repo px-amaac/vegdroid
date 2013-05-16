@@ -34,12 +34,13 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * filter venues, a mapping of Marker <--> venueId is required.
  *
  */
-public class MapActivity extends SherlockFragmentActivity {
+public class MapActivity extends AbstractMapActivity {
     private static final String MAP_FRAGMENT_TAG = "map";
     private static final boolean DEBUG = false;
     public volatile GoogleMap map;
     private SupportMapFragment fMap;
     private String fError = "";
+    private int venueId;
 
     private Location fCurrentLoc = null;
 
@@ -53,20 +54,21 @@ public class MapActivity extends SherlockFragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_container);
-        getSupportActionBar().setHomeButtonEnabled(true);
-        fMap = ((SupportMapFragment) getSupportFragmentManager()
-                .findFragmentByTag(MAP_FRAGMENT_TAG));
-        // Test if the map fragment is there
-        if (fMap == null) {
-            fMap = SupportMapFragment.newInstance();
-            FragmentTransaction ft = getSupportFragmentManager()
-                    .beginTransaction();
-            ft.add(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
-            ft.commit();
+        if (readyToGo()) {
+            setContentView(R.layout.activity_container);
+            getSupportActionBar().setHomeButtonEnabled(true);
+            fMap = ((SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentByTag(MAP_FRAGMENT_TAG));
+            // Test if the map fragment is there
+            if (fMap == null) {
+                fMap = SupportMapFragment.newInstance();
+                FragmentTransaction ft = getSupportFragmentManager()
+                        .beginTransaction();
+                ft.add(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
+                ft.commit();
+            }
         }
         setUpMapIfNeeded();
-
 
         // Work around pre-Froyo bugs in HTTP connection reuse.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
@@ -75,7 +77,8 @@ public class MapActivity extends SherlockFragmentActivity {
 
         Global.getInstance(this).mapActivity = this;
 
-        //new LoadStream(this).execute(this.getLocation());
+        if (this.UpdateLocation())
+            new LoadStream(this).execute(this.getLocation());
     }
 
     private void setUpMapIfNeeded() {
@@ -105,15 +108,15 @@ public class MapActivity extends SherlockFragmentActivity {
 
         map.setOnInfoWindowClickListener(new OnInfoWindowClickListener() {
             public void onInfoWindowClick(Marker m) {
-                int VenueId = markers.get(m);
-                // TODO: launch the venue fragment
+                venueId = markers.get(m);
+                showFragment(0);
             }
         });
 
-        if (this.UpdateLocation())
+        if (this.UpdateLocation()) {
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                     this.getLocation(), 12.f));
-
+        }
         /*
          * Date gstart = new Date(); Geocoder gc = new Geocoder(this); int N =
          * 1; for ( int i=1; i<=N; i++ ) try { String loc = "Leopoldstr. " + i +
@@ -153,6 +156,7 @@ public class MapActivity extends SherlockFragmentActivity {
         // In case Google Play services has since become available.
         setUpMapIfNeeded();
     }
+
     @Override
     protected void onDestroy() {
         Global.getInstance(this).mapActivity = null;
@@ -285,8 +289,6 @@ public class MapActivity extends SherlockFragmentActivity {
             return new LatLng(fCurrentLoc.getLatitude(),
                     fCurrentLoc.getLongitude());
     }
-
-
 
     public synchronized void addMarker(Context context, int vId, LatLng ll) {
         if (map == null)
