@@ -30,6 +30,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import de.thiemonagel.vegdroid.DetailsFragment.GetData;
+import de.thiemonagel.vegdroid.ListFragment.SetDetails;
 
 /**
  * Activity to display venues as markers on a zoom- and moveable map.
@@ -38,7 +39,8 @@ import de.thiemonagel.vegdroid.DetailsFragment.GetData;
  * filter venues, a mapping of Marker <--> venueId is required.
  *
  */
-public class MapActivity extends AbstractMapActivity implements GetData {
+public class MapActivity extends AbstractMapActivity implements GetData,
+        SetDetails {
     private static final String MAP_FRAGMENT_TAG = "map";
     private static final boolean DEBUG = false;
     private static final int SHOW_MAP = 0;
@@ -52,6 +54,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     private DetailsFragment details;
     private AboutFragment aboutFrag;
     private SupportMapFragment fMap;
+    private ListFragment listFrag;
     private Fragment visible;
     private Fragment mVisibleCached;
     private Map<Marker, Integer> markers = new HashMap<Marker, Integer>(); // (Marker
@@ -60,9 +63,12 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     private Map<Integer, Marker> venues = new HashMap<Integer, Marker>(); // (venueId
                                                                           // -->
                                                                           // Marker)
-    public void setData(int vId) {
+
+    public void setDetails(int vId) {
         venueId = vId;
+        showFragment(SHOW_DETAILS);
     }
+
     // this is used by the details fragment to retrieve the data for the
     // specific venue. It is part of the interface that this class implements.
     public int getData() {
@@ -75,17 +81,18 @@ public class MapActivity extends AbstractMapActivity implements GetData {
         setContentView(R.layout.activity_container);
         getSupportActionBar().setHomeButtonEnabled(true);
 
-        if (readyToGo()) {
-            fMap = ((SupportMapFragment) getSupportFragmentManager()
-                    .findFragmentByTag(MAP_FRAGMENT_TAG));
-            if (fMap == null) {
-                fMap = SupportMapFragment.newInstance();
-            }
+            if (readyToGo()) {
+                fMap = ((SupportMapFragment) getSupportFragmentManager()
+                        .findFragmentByTag(MAP_FRAGMENT_TAG));
+                if (fMap == null) {
+                    fMap = SupportMapFragment.newInstance();
+                }
                 FragmentTransaction ft = getSupportFragmentManager()
                         .beginTransaction();
                 ft.replace(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
                 ft.commit();
-        }
+            }
+
 
         setupFragments(savedInstanceState);
 
@@ -113,27 +120,33 @@ public class MapActivity extends AbstractMapActivity implements GetData {
                     .beginTransaction();
             ft.setCustomAnimations(android.R.anim.fade_in,
                     android.R.anim.fade_out);
-            if (v.equals(DetailsFragment.TAG)) {
-                venueId = i;
-                details = DetailsFragment.newInstance();
-                ft.replace(getLayout(), details, DetailsFragment.TAG);
-                visible = details;
+            if (v != null) {
+                if (v.equals(ListFragment.TAG)) {
+                    listFrag = ListFragment.newInstance();
+                    ft.replace(R.id.map_list_menu, listFrag, ListFragment.TAG);
+                    visible = listFrag;
+                }
+                if (v.equals(DetailsFragment.TAG)) {
+                    venueId = i;
+                    details = DetailsFragment.newInstance();
+                    ft.replace(getLayout(), details, DetailsFragment.TAG);
+                    visible = details;
+                }
+                if (v.equals(AboutFragment.TAG)) {
+                    aboutFrag = AboutFragment.newInstance();
+                    ft.replace(getLayout(), aboutFrag, AboutFragment.TAG);
+                    visible = aboutFrag;
+                }
+                ft.commit();
             }
-            if (v.equals(AboutFragment.TAG)) {
-                aboutFrag = AboutFragment.newInstance();
-                ft.replace(getLayout(), aboutFrag, AboutFragment.TAG);
-                visible = aboutFrag;
-            }
-            ft.commit();
-
         }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if(visible != null)
-        outState.putString("visible", visible.getTag());
+        if (visible != null)
+            outState.putString("visible", visible.getTag());
         outState.putInt("vId", venueId);
 
     }
@@ -143,6 +156,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
         super.onResume();
 
         // In case Google Play services has since become available.
+
         setUpMapIfNeeded();
     }
 
@@ -172,7 +186,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             FilterDialog.CreateDialog(this).show();
             return true;
         case R.id.menu_list:
-            // TODO: display the venue list
+            showFragment(SHOW_LIST);
             return true;
         default:
             return super.onOptionsItemSelected(item);
@@ -182,7 +196,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the
         // map.
-        if (map == null) {
+        if (map == null && fMap != null) {
             // Try to obtain the map from the SupportMapFragment.
             map = fMap.getMap();
             // Check if we were successful in obtaining the map.
@@ -206,7 +220,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
 
         map.setOnInfoWindowClickListener(new OnInfoWindowClickListener() {
             public void onInfoWindowClick(Marker m) {
-                setData(markers.get(m));
+                setDetails(markers.get(m));
                 showFragment(SHOW_DETAILS);
             }
         });
@@ -267,7 +281,6 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             ft.replace(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
             ft.addToBackStack(null);
             visible = fMap;
-            ft.commit();
             setUpMapIfNeeded();
             break;
         case SHOW_DETAILS:
@@ -278,7 +291,6 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             ft.replace(layout, details, DetailsFragment.TAG);
             ft.addToBackStack(null);
             visible = details;
-            ft.commit();
             break;
         case SHOW_ABOUT:
             aboutFrag = ((AboutFragment) fm
@@ -289,11 +301,17 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             ft.replace(layout, aboutFrag, AboutFragment.TAG);
             ft.addToBackStack(null);
             visible = aboutFrag;
-            ft.commit();
             break;
         case SHOW_LIST:
+            listFrag = ((ListFragment) fm.findFragmentByTag(ListFragment.TAG));
+            if (listFrag == null)
+                listFrag = ListFragment.newInstance();
+            ft.replace(R.id.map_list_menu, listFrag, ListFragment.TAG);
+            visible = listFrag;
             break;
+
         }
+        ft.commit();
     }
 
     private int getLayout() {
