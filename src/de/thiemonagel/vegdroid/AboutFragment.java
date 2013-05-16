@@ -24,7 +24,7 @@ public class AboutFragment extends SherlockFragment {
     public View onCreateView(LayoutInflater inflate, ViewGroup container,
             Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
+
         setHasOptionsMenu(true);
         View result = inflate
                 .inflate(R.layout.activity_about, container, false);

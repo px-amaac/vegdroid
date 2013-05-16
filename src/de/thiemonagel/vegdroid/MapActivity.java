@@ -16,6 +16,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NavUtils;
 import android.util.FloatMath;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
@@ -45,29 +46,23 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     private static final int SHOW_LIST = 2;
     private static final int SHOW_ABOUT = 3;
     public volatile GoogleMap map;
-
     private String fError = "";
     private int venueId;
-
     private Location fCurrentLoc = null;
-
     private DetailsFragment details;
     private AboutFragment aboutFrag;
     private SupportMapFragment fMap;
     private Fragment visible;
     private Fragment mVisibleCached;
-
     private Map<Marker, Integer> markers = new HashMap<Marker, Integer>(); // (Marker
                                                                            // -->
                                                                            // venueId)
     private Map<Integer, Marker> venues = new HashMap<Integer, Marker>(); // (venueId
                                                                           // -->
                                                                           // Marker)
-
     public void setData(int vId) {
         venueId = vId;
     }
-
     // this is used by the details fragment to retrieve the data for the
     // specific venue. It is part of the interface that this class implements.
     public int getData() {
@@ -77,21 +72,23 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_container);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
         if (readyToGo()) {
-            setContentView(R.layout.activity_container);
-            getSupportActionBar().setHomeButtonEnabled(true);
-            showFragment(SHOW_MAP);
-            /*
-             * fMap = ((SupportMapFragment) getSupportFragmentManager()
-             * .findFragmentByTag(MAP_FRAGMENT_TAG)); if (fMap == null) { fMap =
-             * SupportMapFragment.newInstance(); FragmentTransaction ft =
-             * getSupportFragmentManager() .beginTransaction();
-             * ft.add(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG); ft.commit();
-             * }
-             *
-             * setUpMapIfNeeded();
-             */
+            fMap = ((SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentByTag(MAP_FRAGMENT_TAG));
+            if (fMap == null) {
+                fMap = SupportMapFragment.newInstance();
+            }
+                FragmentTransaction ft = getSupportFragmentManager()
+                        .beginTransaction();
+                ft.replace(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
+                ft.commit();
         }
+
+        setupFragments(savedInstanceState);
+
         // Work around pre-Froyo bugs in HTTP connection reuse.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
             System.setProperty("http.keepAlive", "false");
@@ -103,17 +100,49 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             new LoadStream(this).execute(this.getLocation());
     }
 
+    private void setupFragments(Bundle savedInstanceState) {
+        String v = null;
+        int i;
+        if (savedInstanceState == null) {
+            if (readyToGo())
+                showFragment(SHOW_MAP);
+        } else {
+            v = savedInstanceState.getString("visible");
+            i = savedInstanceState.getInt("vId");
+            FragmentTransaction ft = getSupportFragmentManager()
+                    .beginTransaction();
+            ft.setCustomAnimations(android.R.anim.fade_in,
+                    android.R.anim.fade_out);
+            if (v.equals(DetailsFragment.TAG)) {
+                venueId = i;
+                details = DetailsFragment.newInstance();
+                ft.replace(getLayout(), details, DetailsFragment.TAG);
+                visible = details;
+            }
+            if (v.equals(AboutFragment.TAG)) {
+                aboutFrag = AboutFragment.newInstance();
+                ft.replace(getLayout(), aboutFrag, AboutFragment.TAG);
+                visible = aboutFrag;
+            }
+            ft.commit();
+
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if(visible != null)
+        outState.putString("visible", visible.getTag());
+        outState.putInt("vId", venueId);
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        String tag = visible.getTag();
-        //check to see if the details fragment was the last one visible.
-        if(tag == DetailsFragment.TAG)
-            showFragment(SHOW_DETAILS); //because its container might have disappeared due to config change we will show it again.
 
-        if(tag == AboutFragment.TAG)
-            showFragment(SHOW_ABOUT);
-            // In case Google Play services has since become available.
+        // In case Google Play services has since become available.
         setUpMapIfNeeded();
     }
 
@@ -221,12 +250,12 @@ public class MapActivity extends AbstractMapActivity implements GetData {
     private void showFragment(int fragIn) {
         final FragmentManager fm = getSupportFragmentManager();
         final FragmentTransaction ft = fm.beginTransaction();
-        int layout = getLayout(); //test which layout we are in.
+        int layout = getLayout(); // test which layout we are in.
         ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
         if (visible != null) {
             mVisibleCached = visible; // we need to cache the currently visible
-                                      // fragment in case the user presses the
-                                      // back button.
+            // fragment in case the user presses the
+            // back button.
         }
         // 0 is for menu fragmnet
         switch (fragIn) {
@@ -246,7 +275,7 @@ public class MapActivity extends AbstractMapActivity implements GetData {
                     .findFragmentByTag(DetailsFragment.TAG));
             if (details == null)
                 details = DetailsFragment.newInstance();
-                ft.replace(layout, details, DetailsFragment.TAG);
+            ft.replace(layout, details, DetailsFragment.TAG);
             ft.addToBackStack(null);
             visible = details;
             ft.commit();
@@ -262,15 +291,20 @@ public class MapActivity extends AbstractMapActivity implements GetData {
             visible = aboutFrag;
             ft.commit();
             break;
+        case SHOW_LIST:
+            break;
         }
     }
 
-private int getLayout() {
+    private int getLayout() {
 
-        if(findViewById(R.id.details_about) == null)
-            return R.id.map_list_menu;
-        return R.id.details_about;
-
+        if (findViewById(R.id.details_about) != null) {
+            Toast.makeText(this, "details about not null", Toast.LENGTH_SHORT)
+                    .show();
+            Log.d(Global.LOG_TAG, " notnulldetails");
+            return R.id.details_about;
+        }
+        return R.id.map_list_menu;
     }
 
     boolean UpdateLocation() {
