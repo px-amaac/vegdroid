@@ -50,18 +50,15 @@ public class MainMenuFragment extends SherlockFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        final int MASK_ALL = 0x3ff;
-        final int MASK_FOOD = 0x00f;
-        final int MASK_SHOP = 0x050;
-        final int MASK_LODGE = 0x100;
+
 
         // hide "custom" button when category filter has not been customized
 
         int filter = Global.getInstance(main).getCatFilterMask()
-                & MASK_ALL;
+                & MainActivity.MASK_ALL;
         Log.d(Global.LOG_TAG, "onResume() filter: " + filter);
-        if (filter == MASK_FOOD || filter == MASK_SHOP
-                || filter == MASK_LODGE || filter == MASK_ALL)
+        if (filter == MainActivity.MASK_FOOD || filter == MainActivity.MASK_SHOP
+                || filter == MainActivity.MASK_LODGE || filter == MainActivity.MASK_ALL)
             bt.setVisibility(View.GONE);
         else
             bt.setVisibility(View.VISIBLE);
@@ -73,16 +70,16 @@ public class MainMenuFragment extends SherlockFragment implements
         switch (id) {
 
         case R.id.food:
-            main.showFragment(3); //the numbers 3-7 relate to the switch statement for the show fragments function.
+            main.showFragment(MainActivity.MASK_FOOD); //the numbers 3-7 relate to the switch statement for the show fragments function.
             break;
         case R.id.shops:
-            main.showFragment(4);
+            main.showFragment(MainActivity.MASK_SHOP);
             break;
         case R.id.accommodation:
-            main.showFragment(5);
+            main.showFragment(MainActivity.MASK_LODGE);
             break;
         case R.id.all:
-            main.showFragment(6);
+            main.showFragment(MainActivity.MASK_ALL);
             break;
         case R.id.btCustom:
             main.showFragment(7);

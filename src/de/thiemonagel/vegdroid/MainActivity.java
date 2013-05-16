@@ -25,6 +25,9 @@ public class MainActivity extends SherlockFragmentActivity {
     public static final int MASK_SHOP = 0x050;
     public static final int MASK_LODGE = 0x100;
 
+    public static final int SHOW_MENU = 0;
+    public static final int SHOW_ABOUT = 1;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,7 +85,7 @@ public class MainActivity extends SherlockFragmentActivity {
             mVisibleCached = visible; //we need to cache the currently visible fragment in case the user presses the back button.
         }
         // 0 is for menu fragmnet
-        if (fragIn == 0) {
+        if (fragIn == SHOW_MENU) {
             menuFrag = ((MainMenuFragment) fm
                     .findFragmentByTag(MainMenuFragment.TAG));
             if (menuFrag == null)
@@ -93,7 +96,7 @@ public class MainActivity extends SherlockFragmentActivity {
             ft.commit();
         }
         // 1 is for about fragment
-        else if (fragIn == 1) {
+        else if (fragIn == SHOW_ABOUT) {
             aboutFrag = ((AboutFragment) fm
                     .findFragmentByTag(AboutFragment.TAG));
 
@@ -107,16 +110,16 @@ public class MainActivity extends SherlockFragmentActivity {
         // the rest are map fragments with different data displayed
         else {
             switch (fragIn) {
-            case 3:
+            case MASK_FOOD:
                 Global.getInstance(this).setCatFilterMask(MASK_FOOD);
                 break;
-            case 4:
+            case MASK_SHOP:
                 Global.getInstance(this).setCatFilterMask(MASK_SHOP);
                 break;
-            case 5:
+            case MASK_LODGE:
                 Global.getInstance(this).setCatFilterMask(MASK_LODGE);
                 break;
-            case 6:
+            case MASK_ALL:
                 Global.getInstance(this).setCatFilterMask(MASK_ALL);
                 break;
             }
@@ -131,34 +134,4 @@ public class MainActivity extends SherlockFragmentActivity {
         super.onBackPressed();
         visible = mVisibleCached;
     }
-
-    public void StartFood(View view) {
-        Global.getInstance(this).setCatFilterMask(MASK_FOOD);
-        Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    }
-
-    public void StartShop(View view) {
-        Global.getInstance(this).setCatFilterMask(MASK_SHOP);
-        Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    }
-
-    public void StartLodge(View view) {
-        Global.getInstance(this).setCatFilterMask(MASK_LODGE);
-        Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    }
-
-    public void StartAll(View view) {
-        Global.getInstance(this).setCatFilterMask(MASK_ALL);
-        Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    }
-
-    public void StartCustom(View view) {
-        Intent intent = new Intent(this, MapActivity.class);
-        startActivity(intent);
-    }
-
 }

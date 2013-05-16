@@ -10,12 +10,13 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NavUtils;
 import android.util.FloatMath;
 import android.util.Log;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,6 +28,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import de.thiemonagel.vegdroid.DetailsFragment.GetData;
+
 /**
  * Activity to display venues as markers on a zoom- and moveable map.
  *
@@ -34,15 +37,25 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * filter venues, a mapping of Marker <--> venueId is required.
  *
  */
-public class MapActivity extends AbstractMapActivity {
+public class MapActivity extends AbstractMapActivity implements GetData {
     private static final String MAP_FRAGMENT_TAG = "map";
     private static final boolean DEBUG = false;
+    private static final int SHOW_MAP = 0;
+    private static final int SHOW_DETAILS = 1;
+    private static final int SHOW_LIST = 2;
+    private static final int SHOW_ABOUT = 3;
     public volatile GoogleMap map;
-    private SupportMapFragment fMap;
+
     private String fError = "";
     private int venueId;
 
     private Location fCurrentLoc = null;
+
+    private DetailsFragment details;
+    private AboutFragment aboutFrag;
+    private SupportMapFragment fMap;
+    private Fragment visible;
+    private Fragment mVisibleCached;
 
     private Map<Marker, Integer> markers = new HashMap<Marker, Integer>(); // (Marker
                                                                            // -->
@@ -51,25 +64,34 @@ public class MapActivity extends AbstractMapActivity {
                                                                           // -->
                                                                           // Marker)
 
+    public void setData(int vId) {
+        venueId = vId;
+    }
+
+    // this is used by the details fragment to retrieve the data for the
+    // specific venue. It is part of the interface that this class implements.
+    public int getData() {
+        return venueId;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (readyToGo()) {
             setContentView(R.layout.activity_container);
             getSupportActionBar().setHomeButtonEnabled(true);
-            fMap = ((SupportMapFragment) getSupportFragmentManager()
-                    .findFragmentByTag(MAP_FRAGMENT_TAG));
-            // Test if the map fragment is there
-            if (fMap == null) {
-                fMap = SupportMapFragment.newInstance();
-                FragmentTransaction ft = getSupportFragmentManager()
-                        .beginTransaction();
-                ft.add(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
-                ft.commit();
-            }
+            showFragment(SHOW_MAP);
+            /*
+             * fMap = ((SupportMapFragment) getSupportFragmentManager()
+             * .findFragmentByTag(MAP_FRAGMENT_TAG)); if (fMap == null) { fMap =
+             * SupportMapFragment.newInstance(); FragmentTransaction ft =
+             * getSupportFragmentManager() .beginTransaction();
+             * ft.add(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG); ft.commit();
+             * }
+             *
+             * setUpMapIfNeeded();
+             */
         }
-        setUpMapIfNeeded();
-
         // Work around pre-Froyo bugs in HTTP connection reuse.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
             System.setProperty("http.keepAlive", "false");
@@ -79,6 +101,53 @@ public class MapActivity extends AbstractMapActivity {
 
         if (this.UpdateLocation())
             new LoadStream(this).execute(this.getLocation());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String tag = visible.getTag();
+        //check to see if the details fragment was the last one visible.
+        if(tag == DetailsFragment.TAG)
+            showFragment(SHOW_DETAILS); //because its container might have disappeared due to config change we will show it again.
+
+        if(tag == AboutFragment.TAG)
+            showFragment(SHOW_ABOUT);
+            // In case Google Play services has since become available.
+        setUpMapIfNeeded();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Global.getInstance(this).mapActivity = null;
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getSupportMenuInflater().inflate(R.menu.activity_map, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case android.R.id.home: // no idea what this is for
+            NavUtils.navigateUpFromSameTask(this);
+            return true;
+        case R.id.menu_about:
+            showFragment(SHOW_ABOUT);
+            return true;
+        case R.id.menu_filter_cat:
+            FilterDialog.CreateDialog(this).show();
+            return true;
+        case R.id.menu_list:
+            // TODO: display the venue list
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
     }
 
     private void setUpMapIfNeeded() {
@@ -108,8 +177,8 @@ public class MapActivity extends AbstractMapActivity {
 
         map.setOnInfoWindowClickListener(new OnInfoWindowClickListener() {
             public void onInfoWindowClick(Marker m) {
-                venueId = markers.get(m);
-                showFragment(0);
+                setData(markers.get(m));
+                showFragment(SHOW_DETAILS);
             }
         });
 
@@ -149,45 +218,59 @@ public class MapActivity extends AbstractMapActivity {
          */
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // In case Google Play services has since become available.
-        setUpMapIfNeeded();
-    }
-
-    @Override
-    protected void onDestroy() {
-        Global.getInstance(this).mapActivity = null;
-        super.onDestroy();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getSupportMenuInflater().inflate(R.menu.activity_map, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-        case android.R.id.home: // no idea what this is for
-            NavUtils.navigateUpFromSameTask(this);
-            return true;
-        case R.id.menu_about:
-            // TODO: display the about fragment
-            return true;
-        case R.id.menu_filter_cat:
-            FilterDialog.CreateDialog(this).show();
-            return true;
-        case R.id.menu_list:
-            // TODO: display the venue list
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
+    private void showFragment(int fragIn) {
+        final FragmentManager fm = getSupportFragmentManager();
+        final FragmentTransaction ft = fm.beginTransaction();
+        int layout = getLayout(); //test which layout we are in.
+        ft.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
+        if (visible != null) {
+            mVisibleCached = visible; // we need to cache the currently visible
+                                      // fragment in case the user presses the
+                                      // back button.
         }
+        // 0 is for menu fragmnet
+        switch (fragIn) {
+        case SHOW_MAP:
+            fMap = ((SupportMapFragment) fm.findFragmentByTag(MAP_FRAGMENT_TAG));
+            // Test if the map fragment is there
+            if (fMap == null)
+                fMap = SupportMapFragment.newInstance();
+            ft.replace(R.id.map_list_menu, fMap, MAP_FRAGMENT_TAG);
+            ft.addToBackStack(null);
+            visible = fMap;
+            ft.commit();
+            setUpMapIfNeeded();
+            break;
+        case SHOW_DETAILS:
+            details = ((DetailsFragment) fm
+                    .findFragmentByTag(DetailsFragment.TAG));
+            if (details == null)
+                details = DetailsFragment.newInstance();
+                ft.replace(layout, details, DetailsFragment.TAG);
+            ft.addToBackStack(null);
+            visible = details;
+            ft.commit();
+            break;
+        case SHOW_ABOUT:
+            aboutFrag = ((AboutFragment) fm
+                    .findFragmentByTag(AboutFragment.TAG));
+
+            if (aboutFrag == null)
+                aboutFrag = AboutFragment.newInstance();
+            ft.replace(layout, aboutFrag, AboutFragment.TAG);
+            ft.addToBackStack(null);
+            visible = aboutFrag;
+            ft.commit();
+            break;
+        }
+    }
+
+private int getLayout() {
+
+        if(findViewById(R.id.details_about) == null)
+            return R.id.map_list_menu;
+        return R.id.details_about;
+
     }
 
     boolean UpdateLocation() {
